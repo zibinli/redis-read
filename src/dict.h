@@ -74,11 +74,11 @@ typedef struct dictht {
 } dictht;
 
 typedef struct dict {
-    dictType *type;
-    void *privdata;
-    dictht ht[2];
-    long rehashidx; /* rehashing not in progress if rehashidx == -1 */
-    int iterators; /* number of iterators currently running */
+    dictType *type; // 类型特定函数
+    void *privdata; // 私有数据
+    dictht ht[2];   // 哈希表(两个)
+    long rehashidx; // 记录 rehash 进度的标志。值为 -1 表示 rehash 未进行
+    int iterators;  // 当前正在迭代的迭代器数
 } dict;
 
 /* If safe is set to 1 this is a safe iterator, that means, you can call
