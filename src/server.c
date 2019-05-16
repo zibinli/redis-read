@@ -666,8 +666,8 @@ dictType replScriptCacheDictType = {
 int htNeedsResize(dict *dict) {
     long long size, used;
 
-    size = dictSlots(dict);
-    used = dictSize(dict);
+    size = dictSlots(dict); // ht[2] 两个哈希表的大小之和
+    used = dictSize(dict);  // ht[2] 两个哈希表已保存节点数量之和
     return (size > DICT_HT_INITIAL_SIZE &&
             (used*100/size < HASHTABLE_MIN_FILL));
 }
