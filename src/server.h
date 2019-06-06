@@ -988,19 +988,17 @@ typedef struct pubsubPattern {
 typedef void redisCommandProc(client *c);
 typedef int *redisGetKeysProc(struct redisCommand *cmd, robj **argv, int argc, int *numkeys);
 struct redisCommand {
-    char *name;
-    redisCommandProc *proc;
-    int arity;
-    char *sflags; /* Flags as string representation, one char per flag. */
-    int flags;    /* The actual flags, obtained from the 'sflags' field. */
-    /* Use a function to determine keys arguments in a command line.
-     * Used for Redis Cluster redirect. */
-    redisGetKeysProc *getkeys_proc;
-    /* What keys should be loaded in background when calling this command? */
-    int firstkey; /* The first argument that's a key (0 = no keys) */
-    int lastkey;  /* The last argument that's a key */
-    int keystep;  /* The step between first and last key */
-    long long microseconds, calls;
+    char *name;   // 命令名称。如 "SET"
+    redisCommandProc *proc; // 对应函数指针，指向命令的实现函数。比如 SET 对应的 setCommand 函数
+    int arity;    // 命令参数的格个数。用来检查命令请求的格式是否合法。
+                        // 要注意的命令的名称也是一个参数。像我们上面的 SET KEY VALUE 命令，实际上有三个参数。
+    char *sflags; // 字符串形式的标识值。记录了命令的属性。
+    int flags;    // 对 sflags 标识分析得出的二进制标识，由程序自动生成。检查命令时，实际上使用的是此字段
+    redisGetKeysProc *getkeys_proc; // 指针函数，通过此方法来指定 key 的位置。
+    int firstkey; // 第一个 key 的位置
+    int lastkey;  // 最后一个 key 的位置
+    int keystep;  // key 之间的间距
+    long long microseconds, calls; // 命令的总调用时间及调用次数
 };
 
 struct redisFunctionSym {
