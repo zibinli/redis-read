@@ -461,11 +461,11 @@ typedef long long mstime_t; /* millisecond time type. */
 #define LRU_CLOCK_MAX ((1<<LRU_BITS)-1) /* Max value of obj->lru */
 #define LRU_CLOCK_RESOLUTION 1000 /* LRU clock resolution in ms */
 typedef struct redisObject {
-    unsigned type:4;
-    unsigned encoding:4;
-    unsigned lru:LRU_BITS; /* lru time (relative to server.lruclock) */
-    int refcount;
-    void *ptr;
+    unsigned type:4;       // 对象类型
+    unsigned encoding:4;   // 对象编码
+    unsigned lru:LRU_BITS; // LRU 
+    int refcount;          // 引用统计
+    void *ptr;             // 指向底层实现数据结构的指针
 } robj;
 
 /* Macro used to obtain the current LRU clock.
