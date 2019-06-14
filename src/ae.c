@@ -357,16 +357,20 @@ int aeProcessEvents(aeEventLoop *eventLoop, int flags)
     /* Nothing to do? return ASAP */
     if (!(flags & AE_TIME_EVENTS) && !(flags & AE_FILE_EVENTS)) return 0;
 
-    /* Note that we want call select() even if there are no
-     * file events to process as long as we want to process time
-     * events, in order to sleep until the next time event is ready
-     * to fire. */
+
+    /* 首先判断是否存在需要监听的文件事件，如果存在需要监听的文件事件，那么通过IO多路复用程序获取
+     * 准备就绪的文件事件，至于IO多路复用程序是否等待以及等待多久的时间，依发生时间距离现在最近的时间事件确定;
+     * 如果eventLoop->maxfd == -1表示没有需要监听的文件事件，但是时间事件肯定是存在的(serverCron())，
+     * 如果此时没有设置 AE_DONT_WAIT 标志位，此时调用IO多路复用，其目的不是为了监听文件事件是否准备就绪，
+     * 而是为了使线程休眠到发生时间距离现在最近的时间事件的发生时间(作用类似于unix中的sleep函数),
+     * 这种休眠操作的目的是为了避免线程一直不停的遍历时间事件形成的无序链表，造成不必要的资源浪费 */
     if (eventLoop->maxfd != -1 ||
         ((flags & AE_TIME_EVENTS) && !(flags & AE_DONT_WAIT))) {
         int j;
         aeTimeEvent *shortest = NULL;
         struct timeval tv, *tvp;
 
+        /* 寻找发生时间距离现在最近的时间事件,该时间事件的发生时间与当前时间之差就是IO多路复用程序应该等待的时间 */
         if (flags & AE_TIME_EVENTS && !(flags & AE_DONT_WAIT))
             shortest = aeSearchNearestTimer(eventLoop);
         if (shortest) {
@@ -381,6 +385,10 @@ int aeProcessEvents(aeEventLoop *eventLoop, int flags)
                 (shortest->when_sec - now_sec)*1000 +
                 shortest->when_ms - now_ms;
 
+            /* 如果时间之差大于0，说明时间事件到时时间未到,则等待对应的时间;
+             * 如果时间间隔小于0，说明时间事件已经到时，此时如果没有
+             * 文件事件准备就绪，那么IO多路复用程序应该立即返回，以免
+             * 耽误处理时间事件*/
             if (ms > 0) {
                 tvp->tv_sec = ms/1000;
                 tvp->tv_usec = (ms % 1000)*1000;
@@ -421,7 +429,7 @@ int aeProcessEvents(aeEventLoop *eventLoop, int flags)
              * before replying to a client. */
             int invert = fe->mask & AE_BARRIER;
 
-	    /* Note the "fe->mask & mask & ..." code: maybe an already
+	        /* Note the "fe->mask & mask & ..." code: maybe an already
              * processed event removed an element that fired and we still
              * didn't processed, so we check if the event is still valid.
              *
