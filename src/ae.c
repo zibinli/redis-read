@@ -376,6 +376,7 @@ int aeProcessEvents(aeEventLoop *eventLoop, int flags)
         if (shortest) {
             long now_sec, now_ms;
 
+            // 创建 timeval 结构
             aeGetTime(&now_sec, &now_ms);
             tvp = &tv;
 
@@ -409,8 +410,10 @@ int aeProcessEvents(aeEventLoop *eventLoop, int flags)
             }
         }
 
+        // 阻塞并等等文件事件产生，最大阻塞事件由 timeval 结构决定
         numevents = aeApiPoll(eventLoop, tvp);
         for (j = 0; j < numevents; j++) {
+            // 处理所有已产生的文件事件
             aeFileEvent *fe = &eventLoop->events[eventLoop->fired[j].fd];
             int mask = eventLoop->fired[j].mask;
             int fd = eventLoop->fired[j].fd;
@@ -462,6 +465,7 @@ int aeProcessEvents(aeEventLoop *eventLoop, int flags)
     }
     /* Check time events */
     if (flags & AE_TIME_EVENTS)
+        // 处理所有已到达的时间事件
         processed += processTimeEvents(eventLoop);
 
     return processed; /* return the number of processed file/time events */
